@@ -1,2 +1,2 @@
 # Cybersecurity
-Este es El repositorio para mi perfil de cyberseguridad
+Este es El repositorio para mi perfil de ciberseguridad
