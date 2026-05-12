@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Calculadora VLSM IPv4</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Syne', sans-serif;
+      background: #0d0618;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 16px;
+    }
+
+    /* Fondo con puntos decorativos */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(circle at 20% 20%, rgba(124,58,237,0.15) 0%, transparent 50%),
+        radial-gradient(circle at 80% 80%, rgba(168,85,247,0.10) 0%, transparent 50%);
+      pointer-events: none;
+    }
+
+    .card {
+      background: #1a0a2e;
+      border-radius: 20px;
+      width: 100%;
+      max-width: 480px;
+      overflow: hidden;
+      box-shadow: 0 25px 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(109,40,217,0.3);
+      position: relative;
+    }
+
+    /* ── HEADER ── */
+    .header {
+      background: linear-gradient(135deg, #3b0764 0%, #6d28d9 50%, #9333ea 100%);
+      padding: 32px 36px 28px;
+      position: relative;
+      overflow: hidden;
+    }
+    .header::before {
+      content: '';
+      position: absolute;
+      top: -40px; right: -40px;
+      width: 140px; height: 140px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.07);
+    }
+    .header::after {
+      content: '';
+      position: absolute;
+      bottom: -24px; left: 24px;
+      width: 90px; height: 90px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.04);
+    }
+    .header-icon {
+      font-size: 13px;
+      color: rgba(255,255,255,0.5);
+      font-family: 'Space Mono', monospace;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+      display: block;
+    }
+    .header h1 {
+      color: #fff;
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      line-height: 1.2;
+    }
+    .header-sub {
+      color: rgba(255,255,255,0.55);
+      font-size: 12px;
+      font-family: 'Space Mono', monospace;
+      margin-top: 4px;
+    }
+    .header-badge {
+      position: absolute;
+      top: 28px; right: 36px;
+      background: rgba(255,255,255,0.12);
+      color: rgba(255,255,255,0.7);
+      font-family: 'Space Mono', monospace;
+      font-size: 11px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      border: 1px solid rgba(255,255,255,0.15);
+    }
+
+    /* ── BODY ── */
+    .body { padding: 32px 36px; }
+
+    .field-label {
+      display: block;
+      color: #a78bfa;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      font-family: 'Space Mono', monospace;
+      margin-bottom: 10px;
+    }
+
+    .prefix-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .slash {
+      color: #c084fc;
+      font-size: 32px;
+      font-weight: 800;
+      font-family: 'Space Mono', monospace;
+      line-height: 1;
+      user-select: none;
+    }
+    .prefix-input {
+      background: #2d1454;
+      border: 1.5px solid #5b21b6;
+      color: #f3e8ff;
+      font-size: 26px;
+      font-weight: 700;
+      font-family: 'Space Mono', monospace;
+      padding: 10px 18px;
+      border-radius: 12px;
+      width: 130px;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      -moz-appearance: textfield;
+    }
+    .prefix-input::-webkit-inner-spin-button,
+    .prefix-input::-webkit-outer-spin-button { -webkit-appearance: none; }
+    .prefix-input:focus {
+      border-color: #a855f7;
+      box-shadow: 0 0 0 3px rgba(168,85,247,0.2);
+    }
+    .prefix-input::placeholder { color: #4c1d95; }
+    .range-hint {
+      color: #6d28d9;
+      font-size: 11px;
+      font-family: 'Space Mono', monospace;
+      margin-top: 8px;
+    }
+
+    /* Slider */
+    .slider-wrap { margin-top: 20px; }
+    .slider {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 5px;
+      border-radius: 3px;
+      background: linear-gradient(to right, #7c3aed 0%, #7c3aed var(--pct, 0%), #2d1454 var(--pct, 0%));
+      outline: none;
+      cursor: pointer;
+      margin-bottom: 6px;
+    }
+    .slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 20px; height: 20px;
+      border-radius: 50%;
+      background: #a855f7;
+      cursor: pointer;
+      border: 3px solid #1a0a2e;
+      box-shadow: 0 0 0 2px #7c3aed;
+      transition: box-shadow 0.2s;
+    }
+    .slider::-webkit-slider-thumb:hover {
+      box-shadow: 0 0 0 4px rgba(168,85,247,0.4);
+    }
+    .slider::-moz-range-thumb {
+      width: 20px; height: 20px;
+      border-radius: 50%;
+      background: #a855f7;
+      cursor: pointer;
+      border: 3px solid #1a0a2e;
+    }
+    .slider-labels {
+      display: flex;
+      justify-content: space-between;
+      color: #4c1d95;
+      font-family: 'Space Mono', monospace;
+      font-size: 10px;
+    }
+
+    /* Error */
+    .error {
+      background: #2d0a0a;
+      border: 1px solid #7f1d1d;
+      color: #fca5a5;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 12px;
+      font-family: 'Space Mono', monospace;
+      margin-top: 14px;
+      display: none;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Botón principal */
+    .btn-calc {
+      width: 100%;
+      background: linear-gradient(135deg, #6d28d9, #9333ea);
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      padding: 15px;
+      font-size: 15px;
+      font-weight: 700;
+      font-family: 'Syne', sans-serif;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+      margin-top: 20px;
+      transition: opacity 0.2s, transform 0.1s;
+      position: relative;
+      overflow: hidden;
+    }
+    .btn-calc::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: rgba(255,255,255,0);
+      transition: background 0.2s;
+    }
+    .btn-calc:hover::before { background: rgba(255,255,255,0.08); }
+    .btn-calc:active { transform: scale(0.98); }
+
+    /* ── RESULTADOS ── */
+    .results { display: none; }
+
+    /* Visualizador de bits */
+    .bits-section { margin-bottom: 20px; }
+    .bits-label {
+      color: #7c3aed;
+      font-size: 10px;
+      font-family: 'Space Mono', monospace;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+    }
+    .bits-grid {
+      display: flex;
+      gap: 3px;
+      flex-wrap: wrap;
+    }
+    .bit {
+      width: 16px; height: 16px;
+      border-radius: 3px;
+      transition: background 0.3s;
+    }
+    .bit-on  { background: #7c3aed; }
+    .bit-sep { background: #c084fc; }
+    .bit-off { background: #2d1454; border: 1px solid #4c1d95; }
+
+    /* Máscara */
+    .mask-row {
+      background: #0d0618;
+      border: 1px solid #5b21b6;
+      border-radius: 10px;
+      padding: 14px 18px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .mask-dot {
+      width: 8px; height: 8px;
+      background: #a855f7;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .mask-lbl {
+      color: #7c3aed;
+      font-size: 11px;
+      font-family: 'Space Mono', monospace;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      flex-shrink: 0;
+    }
+    .mask-val {
+      color: #f3e8ff;
+      font-size: 16px;
+      font-weight: 700;
+      font-family: 'Space Mono', monospace;
+      margin-left: auto;
+    }
+
+    /* Grid de stats */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+    .stat {
+      background: #0d0618;
+      border: 1px solid #3b0764;
+      border-radius: 10px;
+      padding: 14px 16px;
+      text-align: center;
+    }
+    .stat-lbl {
+      display: block;
+      color: #6d28d9;
+      font-size: 10px;
+      font-family: 'Space Mono', monospace;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+    .stat-val {
+      color: #f3e8ff;
+      font-size: 20px;
+      font-weight: 800;
+      font-family: 'Space Mono', monospace;
+    }
+    .stat-val.highlight { color: #c084fc; }
+
+    /* Clase red/host info */
+    .class-row {
+      background: linear-gradient(135deg, rgba(109,40,217,0.15), rgba(147,51,234,0.1));
+      border: 1px solid rgba(109,40,217,0.4);
+      border-radius: 10px;
+      padding: 12px 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 18px;
+    }
+    .class-item { text-align: center; }
+    .class-lbl {
+      display: block;
+      color: #7c3aed;
+      font-size: 10px;
+      font-family: 'Space Mono', monospace;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+    }
+    .class-val {
+      color: #e9d5ff;
+      font-size: 14px;
+      font-weight: 700;
+      font-family: 'Space Mono', monospace;
+    }
+    .class-divider {
+      width: 1px;
+      height: 30px;
+      background: rgba(109,40,217,0.4);
+    }
+
+    /* Botón reset */
+    .btn-reset {
+      width: 100%;
+      background: transparent;
+      color: #8b5cf6;
+      border: 1px solid #3b0764;
+      border-radius: 12px;
+      padding: 13px;
+      font-size: 14px;
+      font-family: 'Syne', sans-serif;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s;
+    }
+    .btn-reset:hover {
+      background: #2d1454;
+      border-color: #6d28d9;
+    }
+
+    /* Footer */
+    .footer {
+      text-align: center;
+      padding: 16px 36px 24px;
+      color: #3b1a6e;
+      font-size: 11px;
+      font-family: 'Space Mono', monospace;
+    }
+
+    /* Animación entrada resultados */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .results.visible {
+      display: block;
+      animation: fadeUp 0.3s ease;
+    }
+    .input-area.hidden { display: none; }
+  </style>
+</head>
+<body>
+
+<div class="card">
+
+  <!-- HEADER -->
+  <div class="header">
+    <span class="header-icon">&#x2022; IPv4 · VLSM</span>
+    <h1>Calculadora de Subredes</h1>
+    <p class="header-sub">Variable Length Subnet Masking</p>
+    <span class="header-badge">IPv4</span>
+  </div>
+
+  <!-- BODY -->
+  <div class="body">
+
+    <!-- INPUT -->
+    <div class="input-area" id="input-area">
+      <label class="field-label" for="prefix-input">Prefijo de subred</label>
+
+      <div class="prefix-row">
+        <span class="slash">/</span>
+        <input
+          class="prefix-input"
+          type="number"
+          id="prefix-input"
+          min="0" max="32"
+          placeholder="24"
+        />
+      </div>
+      <p class="range-hint">Ingrese un valor entre 0 y 32</p>
+
+      <div class="slider-wrap">
+        <input
+          class="slider"
+          type="range"
+          id="slider"
+          min="0" max="32" value="24"
+          style="--pct: 75%"
+        />
+        <div class="slider-labels">
+          <span>/0</span>
+          <span>/8</span>
+          <span>/16</span>
+          <span>/24</span>
+          <span>/32</span>
+        </div>
+      </div>
+
+      <div class="error" id="error-msg">
+        &#9888; El prefijo debe ser un número entre 0 y 32.
+      </div>
+
+      <button class="btn-calc" onclick="calcular()">
+        &#128272; &nbsp; Calcular subred
+      </button>
+    </div>
+
+    <!-- RESULTADOS -->
+    <div class="results" id="results">
+
+      <!-- Bits visualizer -->
+      <div class="bits-section">
+        <div class="bits-label">
+          <span>Bits de red &amp; host</span>
+          <span id="bits-info">red: — / host: —</span>
+        </div>
+        <div class="bits-grid" id="bits-grid"></div>
+      </div>
+
+      <!-- Máscara -->
+      <div class="mask-row">
+        <div class="mask-dot"></div>
+        <span class="mask-lbl">Máscara de subred</span>
+        <span class="mask-val" id="res-mask">—</span>
+      </div>
+
+      <!-- Clase / bits info -->
+      <div class="class-row">
+        <div class="class-item">
+          <span class="class-lbl">Prefijo</span>
+          <span class="class-val" id="res-prefix">—</span>
+        </div>
+        <div class="class-divider"></div>
+        <div class="class-item">
+          <span class="class-lbl">Bits red</span>
+          <span class="class-val" id="res-netbits">—</span>
+        </div>
+        <div class="class-divider"></div>
+        <div class="class-item">
+          <span class="class-lbl">Bits host</span>
+          <span class="class-val" id="res-hostbits">—</span>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="stats-grid">
+        <div class="stat">
+          <span class="stat-lbl">IPs totales</span>
+          <span class="stat-val highlight" id="res-total">—</span>
+        </div>
+        <div class="stat">
+          <span class="stat-lbl">IPs asignables</span>
+          <span class="stat-val" id="res-assign">—</span>
+        </div>
+        <div class="stat">
+          <span class="stat-lbl">Dirección red</span>
+          <span class="stat-val" id="res-net" style="font-size:13px;">—</span>
+        </div>
+        <div class="stat">
+          <span class="stat-lbl">Broadcast</span>
+          <span class="stat-val" id="res-broad" style="font-size:13px;">—</span>
+        </div>
+      </div>
+
+      <button class="btn-reset" onclick="resetCalc()">
+        &#8635; &nbsp; Nuevo cálculo
+      </button>
+    </div>
+
+  </div>
+
+  <div class="footer">por Eligabriel Espinal Hernandez</div>
+</div>
+
+<script>
+  const mascaras = {
+    0:"0.0.0.0", 1:"128.0.0.0", 2:"192.0.0.0", 3:"224.0.0.0",
+    4:"240.0.0.0", 5:"248.0.0.0", 6:"252.0.0.0", 7:"254.0.0.0",
+    8:"255.0.0.0", 9:"255.128.0.0", 10:"255.192.0.0", 11:"255.224.0.0",
+    12:"255.240.0.0", 13:"255.248.0.0", 14:"255.252.0.0", 15:"255.254.0.0",
+    16:"255.255.0.0", 17:"255.255.128.0", 18:"255.255.192.0", 19:"255.255.224.0",
+    20:"255.255.240.0", 21:"255.255.248.0", 22:"255.255.252.0", 23:"255.255.254.0",
+    24:"255.255.255.0", 25:"255.255.255.128", 26:"255.255.255.192", 27:"255.255.255.224",
+    28:"255.255.255.240", 29:"255.255.255.248", 30:"255.255.255.252",
+    31:"255.255.255.254", 32:"255.255.255.255"
+  };
+
+  // Sincronizar slider ↔ input
+  const slider = document.getElementById('slider');
+  const prefixInput = document.getElementById('prefix-input');
+
+  slider.addEventListener('input', function() {
+    prefixInput.value = this.value;
+    updateSliderFill(this.value);
+  });
+  prefixInput.addEventListener('input', function() {
+    const v = parseInt(this.value);
+    if (!isNaN(v) && v >= 0 && v <= 32) {
+      slider.value = v;
+      updateSliderFill(v);
+    }
+  });
+  prefixInput.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') calcular();
+  });
+
+  function updateSliderFill(val) {
+    const pct = (val / 32 * 100).toFixed(1) + '%';
+    slider.style.setProperty('--pct', pct);
+  }
+
+  function formatNum(n) {
+    if (n >= 1_000_000_000) return (n / 1_000_000_000).toFixed(2) + ' B';
+    if (n >= 1_000_000)     return (n / 1_000_000).toFixed(2) + ' M';
+    if (n >= 1_000)         return n.toLocaleString('es-DO');
+    return n.toString();
+  }
+
+  function renderBits(prefix) {
+    const grid = document.getElementById('bits-grid');
+    grid.innerHTML = '';
+    for (let i = 0; i < 32; i++) {
+      const b = document.createElement('div');
+      if (i < prefix) {
+        b.className = 'bit bit-on';
+        b.title = 'Bit de red';
+      } else {
+        b.className = 'bit bit-off';
+        b.title = 'Bit de host';
+      }
+      grid.appendChild(b);
+    }
+    document.getElementById('bits-info').textContent =
+      `red: ${prefix} / host: ${32 - prefix}`;
+  }
+
+  function calcular() {
+    const raw = prefixInput.value.trim();
+    const errEl = document.getElementById('error-msg');
+    const prefijo = parseInt(raw);
+
+    if (raw === '' || isNaN(prefijo) || prefijo < 0 || prefijo > 32) {
+      errEl.style.display = 'flex';
+      return;
+    }
+    errEl.style.display = 'none';
+
+    const mascara = mascaras[prefijo];
+    const ipst = Math.pow(2, 32 - prefijo);
+    const ipsa = Math.max(0, ipst - 2);
+    const hostBits = 32 - prefijo;
+
+    // Calcular dirección de red y broadcast a partir de máscara
+    const maskOctets = mascara.split('.').map(Number);
+    // Dirección base: primeros octetos totalmente con máscara
+    let netAddr = [];
+    let broadAddr = [];
+    for (let i = 0; i < 4; i++) {
+      netAddr.push(maskOctets[i] === 255 ? '—' : '0');
+      broadAddr.push(maskOctets[i] === 0 ? '255' : (maskOctets[i] === 255 ? '—' : '—'));
+    }
+
+    // Rellenar resultados
+    document.getElementById('res-mask').textContent    = mascara;
+    document.getElementById('res-prefix').textContent  = '/' + prefijo;
+    document.getElementById('res-netbits').textContent = prefijo;
+    document.getElementById('res-hostbits').textContent = hostBits;
+    document.getElementById('res-total').textContent   = formatNum(ipst);
+    document.getElementById('res-assign').textContent  = formatNum(ipsa);
+
+    if (prefijo === 32) {
+      document.getElementById('res-net').textContent   = 'Host único';
+      document.getElementById('res-broad').textContent = 'N/A';
+    } else if (prefijo === 0) {
+      document.getElementById('res-net').textContent   = '0.0.0.0';
+      document.getElementById('res-broad').textContent = '255.255.255.255';
+    } else {
+      document.getElementById('res-net').textContent   = 'x.x.x.0';
+      document.getElementById('res-broad').textContent = 'x.x.x.255';
+    }
+
+    renderBits(prefijo);
+
+    document.getElementById('input-area').classList.add('hidden');
+    const res = document.getElementById('results');
+    res.classList.add('visible');
+  }
+
+  function resetCalc() {
+    prefixInput.value = '';
+    slider.value = 24;
+    updateSliderFill(24);
+    document.getElementById('error-msg').style.display = 'none';
+    document.getElementById('results').classList.remove('visible');
+    document.getElementById('input-area').classList.remove('hidden');
+    prefixInput.focus();
+  }
+</script>
+</body>
+</html>
